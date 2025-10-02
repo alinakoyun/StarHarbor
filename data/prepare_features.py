@@ -62,7 +62,7 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     needed = [
         "period_days", "duration_hours", "depth_ppm",
         "rp_rearth", "stellar_radius_rsun", "stellar_teff_k",
-        "stellar_logg", "sma_au", "mission"
+        "stellar_logg_cgs", "sma_au", "mission"
     ]
     for c in needed:
         if c not in df.columns:
@@ -74,7 +74,7 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     r_p_re = pd.to_numeric(df["rp_rearth"], errors="coerce")
     r_s_rsun = pd.to_numeric(df["stellar_radius_rsun"], errors="coerce")
     teff = pd.to_numeric(df["stellar_teff_k"], errors="coerce")
-    logg = pd.to_numeric(df["stellar_logg"], errors="coerce")
+    logg = pd.to_numeric(df["stellar_logg_cgs"], errors="coerce")
     sma_au = pd.to_numeric(df["sma_au"], errors="coerce")
 
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -273,3 +273,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
