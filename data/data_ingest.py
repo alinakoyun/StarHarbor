@@ -284,7 +284,7 @@ def apply_qc_checks(df: pd.DataFrame, qc_cfg: dict | None = None) -> pd.DataFram
 
     df["qc_bad_ratio"] = ratio > qc["duration_period_max_ratio"]
     df["qc_bad_impact"] = df["impact"] > qc["impact_max"]
-    df["qc_low_depth"] = df["transit_depth_ppm"] < qc["min_depth_ppm"]
+    df["qc_low_depth"] = df["depth_ppm"] < qc["min_depth_ppm"]
 
     df["is_valid"] = ~(df["qc_bad_ratio"] | df["qc_bad_impact"])
     return df
@@ -477,3 +477,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
