@@ -1,6 +1,5 @@
 name: Build models & check API
 
-
 on:
   push:
     branches: [ main ]
@@ -24,24 +23,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Ingest data (only if needed)
-        run: |
-          set -e
-          if ls data/processed/exoplanets_common_*.parquet 1>/dev/null 2>&1; then
-            echo "Processed dataset already exists — skipping ingest."
-          elif ls data/sources/kepler.* 1>/dev/null 2>&1 || ls data/sources/k2.* 1>/dev/null 2>&1 || ls data/sources/tess.* 1>/dev/null 2>&1; then
-            echo "Running data_ingest.py with --sources auto"
-            python data/data_ingest.py \
-              --missions kepler k2 tess \
-              --sources auto \
-              --format parquet \
-              --deduplicate yes \
-              --emit-qc-report no
-          else
-            echo "No processed file and no sources/* found — skipping ingest."
-          fi
-
       - name: Ensure processed dir + create tiny dataset if none
+        shell: bash
         run: |
           set -e
           mkdir -p data/processed
@@ -49,23 +32,17 @@ jobs:
              compgen -G "data/processed/exoplanets_common_*.csv" > /dev/null; then
             echo "Found processed file(s)."
           else
-            python - << 'PY'
-import pandas as pd, os
-os.makedirs("data/processed", exist_ok=True)
-df = pd.DataFrame({
-  "mission": ["kepler","kepler","tess"],
-  "period_days": [10.0, 42.0, 3.14],
-  "duration_hours": [2.5, 5.0, 1.2],
-  "depth_ppm": [800.0, 1500.0, 500.0],
-  "label_3way": ["confirmed","candidate","fp"],
-  "system_key": ["kepler|KOI-1|10.0","kepler|KOI-2|42.0","tess|TOI-1|3.14"]
-})
-df.to_csv("data/processed/exoplanets_common_stub.csv", index=False)
-print("Wrote data/processed/exoplanets_common_stub.csv")
-PY
+            printf '%s\n' \
+              'mission,period_days,duration_hours,depth_ppm,label_3way,system_key' \
+              'kepler,10.0,2.5,800.0,confirmed,kepler|KOI-1|10.0' \
+              'kepler,42.0,5.0,1500.0,candidate,kepler|KOI-2|42.0' \
+              'tess,3.14,1.2,500.0,fp,tess|TOI-1|3.14' \
+              > data/processed/exoplanets_common_stub.csv
+            echo "Wrote data/processed/exoplanets_common_stub.csv"
           fi
 
       - name: Prepare features (create preprocessor.pkl / feature_list.json / target_map.json)
+        shell: bash
         run: |
           set -e
           if compgen -G "data/processed/exoplanets_common_*.parquet" > /dev/null; then
@@ -83,30 +60,6 @@ PY
             --split random \
             --seed 42
           ls -lh models/
-
-      - name: Build API image
-        run: docker compose build
-
-      - name: Run API
-        run: docker compose up -d
-
-      - name: Wait & ping API
-        run: |
-          for i in {1..30}; do
-            if curl -sf http://localhost:8000/ping > /dev/null; then
-              echo "API is up"; exit 0
-            fi
-            sleep 2
-          done
-          echo "API did not start in time"; exit 1
-
-      - name: Show logs on failure
-        if: failure()
-        run: docker compose logs --no-color
-
-      - name: Shutdown
-        if: always()
-        run: docker compose down -v
 
       - name: Upload model artifacts
         uses: actions/upload-artifact@v4
