@@ -23,7 +23,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-            - name: Ensure processed dir + create tiny dataset if none
+      - name: Ensure processed dir + create tiny dataset if none
         shell: bash
         run: |
           set -e
@@ -49,7 +49,7 @@ jobs:
               > data/processed/exoplanets_common_stub.csv
             echo "Wrote data/processed/exoplanets_common_stub.csv"
           fi
-          
+
       - name: Prepare features (create preprocessor.pkl / feature_list.json / target_map.json)
         shell: bash
         run: |
@@ -70,6 +70,9 @@ jobs:
             --seed 42
           ls -lh models/
 
+      - name: List models dir
+        run: ls -lah models || true
+
       - name: Upload model artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -78,3 +81,4 @@ jobs:
             models/preprocessor.pkl
             models/feature_list.json
             models/target_map.json
+          if-no-files-found: ignore
