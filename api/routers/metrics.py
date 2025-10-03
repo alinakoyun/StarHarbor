@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any, Dict
 from fastapi import APIRouter, HTTPException
 from api.utils.constants import MODELS_DIR
-from api.services.pipeline import _lazy_boot_tabular, _TAB_MODEL, _FEATURES
+from api.services.pipeline import _lazy_boot_tabular, get_model_and_features
 from api.services.shap_utils import compute_global_importance
 import json
 import logging
@@ -28,4 +28,3 @@ def feature_importance() -> Dict[str, Any]:
     if model is None or not features:
         raise HTTPException(status_code=500, detail="Model not loaded.")
     return {"importance": compute_global_importance(model, features)}
-
