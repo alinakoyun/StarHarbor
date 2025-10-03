@@ -22,10 +22,10 @@ from api.utils.constants import (
 
 log = logging.getLogger(__name__)
 
-_PREPROCESSOR = None                      
-_FEATURES = []            
-_TARGET_MAP: Optional[List[str]] = None
-_TAB_MODEL = None                    
+_PREPROCESSOR = None
+_FEATURES: list[str] = []
+_TAB_MODEL = None
+_TARGET_MAP = None                  
 _CNN_SESSION = None                  
 _SCALER = None                      
 _FUSE = None                         
@@ -36,19 +36,23 @@ def _load_json(path: Path) -> dict:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return {}
-
-
 def _lazy_boot_tabular() -> None:
-    global _PREPROC, _FEATURES, _TAB_MODEL, _TARGET_MAP
+    global _PREPROCESSOR, _FEATURES, _TAB_MODEL, _TARGET_MAP
 
-    if _PREPROC is not None and _TAB_MODEL is not None and _FEATURES:
+    if _TAB_MODEL is not None and _FEATURES:
         return
 
+    from api.utils.constants import (
+        TAB_MODEL_PATH,
+        PREPROCESSOR_PATH,
+        FEATURE_LIST_PATH,
+        TARGET_MAP_PATH,   
+    )
     log_artifact_paths()
     assert_artifacts_available(["PREPROCESSOR_PATH", "FEATURE_LIST_PATH", "TAB_MODEL_PATH"])
 
     log.info("Loading preprocessor: %s", PREPROCESSOR_PATH)
-    _PREPROC = joblib.load(PREPROCESSOR_PATH)
+    _PREPROCESSOR = joblib.load(PREPROCESSOR_PATH)
 
     log.info("Loading feature list: %s", FEATURE_LIST_PATH)
     _FEATURES = json.loads(Path(FEATURE_LIST_PATH).read_text(encoding="utf-8"))
@@ -57,14 +61,13 @@ def _lazy_boot_tabular() -> None:
 
     log.info("Loading tabular model: %s", TAB_MODEL_PATH)
     _TAB_MODEL = joblib.load(TAB_MODEL_PATH)
-
-    if TARGET_MAP_PATH.exists():
+    
+    if 'TARGET_MAP_PATH' in locals() and TARGET_MAP_PATH and Path(TARGET_MAP_PATH).exists():
         try:
-            _TARGET_MAP = json.loads(TARGET_MAP_PATH.read_text(encoding="utf-8"))
+            _TARGET_MAP = json.loads(Path(TARGET_MAP_PATH).read_text(encoding="utf-8"))
             log.info("Loaded target map with %d classes", len(_TARGET_MAP))
         except Exception:
             log.warning("Failed to read TARGET_MAP_PATH %s", TARGET_MAP_PATH)
-
 
 def _lazy_boot_curve() -> None:
     global _CNN_SESSION, _SCALER, _FUSE, _PARAMS
@@ -244,8 +247,9 @@ def predict_fused(
 
 def get_model_and_features():
     _lazy_boot_tabular()
-    return _TAB_MODEL, list(_FEATURES)
+    return _TAB_MODEL, _FEATURES
 
 def align_features(df: pd.DataFrame) -> pd.DataFrame:
     return _align_feature_frame(df)
+
 
