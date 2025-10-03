@@ -22,7 +22,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          
+
       - name: Ingest data (only if needed)
         run: |
           set -e
@@ -40,10 +40,38 @@ jobs:
             echo "No processed file and no sources/* found — skipping ingest."
           fi
 
+      - name: Ensure processed dir + create tiny dataset if none
+        run: |
+          set -e
+          mkdir -p data/processed
+          if compgen -G "data/processed/exoplanets_common_*.parquet" > /dev/null || \
+             compgen -G "data/processed/exoplanets_common_*.csv" > /dev/null; then
+            echo "Found processed file(s)."
+          else
+            python - << 'PY'
+import pandas as pd, os
+os.makedirs("data/processed", exist_ok=True)
+df = pd.DataFrame({
+  "mission": ["kepler","kepler","tess"],
+  "period_days": [10.0, 42.0, 3.14],
+  "duration_hours": [2.5, 5.0, 1.2],
+  "depth_ppm": [800.0, 1500.0, 500.0],
+  "label_3way": ["confirmed","candidate","fp"],
+  "system_key": ["kepler|KOI-1|10.0","kepler|KOI-2|42.0","tess|TOI-1|3.14"]
+})
+df.to_csv("data/processed/exoplanets_common_stub.csv", index=False)
+print("Wrote data/processed/exoplanets_common_stub.csv")
+PY
+          fi
+
       - name: Prepare features (create preprocessor.pkl / feature_list.json / target_map.json)
         run: |
           set -e
-          INPUT=$(ls -1 data/processed/exoplanets_common_*.parquet | tail -n1)
+          if compgen -G "data/processed/exoplanets_common_*.parquet" > /dev/null; then
+            INPUT=$(ls -1 data/processed/exoplanets_common_*.parquet | tail -n1)
+          else
+            INPUT=$(ls -1 data/processed/exoplanets_common_*.csv | tail -n1)
+          fi
           echo "Using INPUT=$INPUT"
           python data/prepare_features.py \
             --input "$INPUT" \
