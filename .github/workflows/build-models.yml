@@ -35,8 +35,11 @@ jobs:
             printf '%s\n' \
               'mission,period_days,duration_hours,depth_ppm,label_3way,system_key' \
               'kepler,10.0,2.5,800.0,confirmed,kepler|KOI-1|10.0' \
+              'k2,12.0,2.7,820.0,confirmed,k2|EPIC-1|12.0' \
               'kepler,42.0,5.0,1500.0,candidate,kepler|KOI-2|42.0' \
+              'k2,38.0,4.5,1400.0,candidate,k2|EPIC-2|38.0' \
               'tess,3.14,1.2,500.0,fp,tess|TOI-1|3.14' \
+              'tess,5.20,1.3,520.0,fp,tess|TOI-2|5.20' \
               > data/processed/exoplanets_common_stub.csv
             echo "Wrote data/processed/exoplanets_common_stub.csv"
           fi
