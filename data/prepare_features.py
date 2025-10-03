@@ -39,7 +39,12 @@ def load_and_filter(path, missions, drop_invalid):
     df = pd.read_parquet(path) if path.endswith(".parquet") else pd.read_csv(path)
     if "all" not in missions:
         df = df[df["mission"].isin(missions)]
-    df = df[(df["period_days"] > 0) & (df["duration_hours"] > 0) & (df["depth_ppm"] > 0)]
+
+    for c in ["period_days", "duration_hours", "depth_ppm"]:
+        if c not in df.columns:
+            df[c] = np.nan
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+        
     if drop_invalid == "yes":
         if "is_valid" in df.columns:
             df = df[df["is_valid"] == True]
@@ -49,13 +54,20 @@ def load_and_filter(path, missions, drop_invalid):
     return df
 
 def map_targets(df, target_mode, outdir):
-    label_map = {"confirmed": 2, "candidate": 1, "fp": 0}
+    label_map = {"confirmed": 2, "candidate": 1, "fp": 0, "unknown": 0}
+
+    df["label_3way"] = df["label_3way"].astype(str).str.lower().str.strip()
     df["target"] = df["label_3way"].map(label_map)
+
     if target_mode == "binary":
-        df["target"] = df["target"].apply(lambda x: 1 if x in [1, 2] else 0)
+        df["target"] = df["target"].apply(lambda x: 1 if x in (1, 2) else 0)
+
+    df = df[df["target"].notna()]
+    df["target"] = df["target"].astype(int)
+
     os.makedirs(outdir, exist_ok=True)
     with open(os.path.join(outdir, "target_map.json"), "w") as f:
-        json.dump(label_map, f)
+        json.dump({"confirmed": 2, "candidate": 1, "fp": 0}, f)  # карта классов для UI/чтения
     return df
 
 def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
@@ -74,7 +86,7 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     r_p_re = pd.to_numeric(df["rp_rearth"], errors="coerce")
     r_s_rsun = pd.to_numeric(df["stellar_radius_rsun"], errors="coerce")
     teff = pd.to_numeric(df["stellar_teff_k"], errors="coerce")
-    logg = pd.to_numeric(df["stellar_logg_cgs"], errors="coerce")
+    logg = pd.to_numeric(df.get("stellar_logg_cgs", df.get("stellar_logg")), errors="coerce")
     sma_au = pd.to_numeric(df["sma_au"], errors="coerce")
 
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -122,7 +134,7 @@ def build_preprocessor(df: pd.DataFrame, outdir: str):
     num_cols = [c for c in df.select_dtypes(include=[np.number]).columns if c != "target"]
 
     numeric_pipe = Pipeline([
-        ("imputer", SimpleImputer(strategy="median")),
+        ("imputer", SimpleImputer(strategy="constant", fill_value=0)),
         ("scaler", StandardScaler())
     ])
     categorical_pipe = Pipeline([
@@ -157,18 +169,19 @@ def split_data(df: pd.DataFrame, X, y: pd.Series, strategy: str, seed: int, outd
     def _as_idx(a):
         return np.array(a, dtype=int)
 
-    if strategy == "random":
-        X_train, X_temp, y_train, y_temp = train_test_split(
-            X, y, test_size=0.30, stratify=y, random_state=seed
-        )
-        X_val, X_test, y_val, y_test = train_test_split(
-            X_temp, y_temp, test_size=0.50, stratify=y_temp, random_state=seed
-        )
+    if strategy == "random" and (y.nunique() < 2 or len(y) < 10):
+        from sklearn.model_selection import train_test_split
+        X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.30, random_state=seed)
+        X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.50, random_state=seed)
         splits = {
             "train": list(y_train.index),
             "val": list(y_val.index),
             "test": list(y_test.index)
         }
+        with open(os.path.join(outdir, "splits.json"), "w") as f:
+            json.dump(splits, f, indent=2)
+        return X_train, X_val, X_test, y_train, y_val, y_test
+
 
     elif strategy == "by_mission":
         if not {"mission_kepler", "mission_k2", "mission_tess"}.issubset(set(df.columns)):
@@ -273,4 +286,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
