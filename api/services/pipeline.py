@@ -129,9 +129,9 @@ def predict_tab(df_norm: pd.DataFrame, *, return_labels: bool = True) -> dict:
 
     # transform
     try:
-        X_tr = _PREPROC.transform(X)
+        X_tr = _PREPROCESSOR.transform(X)
     except AttributeError:
-        X_tr = _PREPROC.fit_transform(X)
+        X_tr = _PREPROCESSOR.fit_transform(X)
 
     # predict
     if hasattr(_TAB_MODEL, "predict_proba"):
@@ -251,5 +251,6 @@ def get_model_and_features():
 
 def align_features(df: pd.DataFrame) -> pd.DataFrame:
     return _align_feature_frame(df)
+
 
 
