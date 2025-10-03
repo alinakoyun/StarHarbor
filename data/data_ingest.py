@@ -104,12 +104,27 @@ def resolve_sources(missions: List[str]) -> List[str]:
         resolved.append(found)
     return resolved
 
+def _read_csv_flex(path: str) -> pd.DataFrame:
+    for kw in (
+        {"sep": None, "engine": "python"},  
+        {"sep": ","},
+        {"sep": ";"},
+        {"sep": "\t"},
+        {"sep": "|"},
+    ):
+        try:
+            return pd.read_csv(path, encoding="utf-8-sig", on_bad_lines="skip", **kw)
+        except Exception:
+            pass
+    raise
+
 def load_raw(source: str, mission: str, outdir_raw: str, timestamp_for_names: str) -> Tuple[pd.DataFrame, Dict[str, str]]:
     ext = os.path.splitext(source)[-1].lower()
     logging.info(f"Loading raw source for {mission}: {source}")
-
+    
     if ext in [".csv", ".tsv"]:
-        df = pd.read_csv(source, sep=None, engine="python", low_memory=False)
+        df = _read_csv_flex(source)
+
     elif ext == ".fits":
         with fits.open(source) as hdul:
             table_hdu = next((hdu for hdu in hdul if hasattr(hdu, "data") and hdu.data is not None), None)
@@ -202,8 +217,8 @@ def normalize_schema(df: pd.DataFrame, mission: str) -> pd.DataFrame:
         elif mission == "tess":
             df["object_id"] = safe_series(df, "toi").fillna(safe_series(df, "tic_id"))
         elif mission == "k2":
-            planet_series = safe_series(df, "planet_name")
-            epic_id = planet_series.str.extract(r"(EPIC\s*\d+)")[0]
+            planet_series = safe_series(df, "planet_name").astype(str)
+            epic_id = planet_series.str.extract(r"(EPIC\s*\d+)", expand=False)
             df["object_id"] = epic_id.fillna(planet_series)
         else:
             df["object_id"] = np.nan
@@ -477,4 +492,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
