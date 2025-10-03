@@ -43,6 +43,13 @@ jobs:
             echo "Wrote $OUT"
           fi
 
+      - name: List models before
+        run: ls -lah models || true
+
+      - name: Clear old model artifacts (avoid feature_list mismatch)
+        run: |
+          rm -f models/feature_list.json models/preprocessor.pkl models/target_map.json || true
+
       - name: Prepare features (create preprocessor.pkl / feature_list.json / target_map.json)
         shell: bash
         run: |
