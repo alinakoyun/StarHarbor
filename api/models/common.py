@@ -6,14 +6,11 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
-
 class AppBaseModel(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
         populate_by_name=True,
         validate_assignment=True,
-        use_enum_values=True,
-        ser_json_inf_nan=False,
     )
 
 class Mission(str, Enum):
