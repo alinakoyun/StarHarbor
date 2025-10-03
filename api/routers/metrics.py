@@ -24,7 +24,8 @@ def summary() -> Dict[str, Any]:
 @router.get("/feature-importance")
 def feature_importance() -> Dict[str, Any]:
     _lazy_boot_tabular()
-    if _TAB_MODEL is None or not _FEATURES:
-        raise HTTPException(500, "Model not loaded.")
-    gi = compute_global_importance(_TAB_MODEL, _FEATURES)
-    return {"importance": gi}
+    model, features = get_model_and_features()
+    if model is None or not features:
+        raise HTTPException(status_code=500, detail="Model not loaded.")
+    return {"importance": compute_global_importance(model, features)}
+
