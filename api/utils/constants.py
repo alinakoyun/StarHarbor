@@ -8,22 +8,22 @@ log = logging.getLogger(__name__)
 
 REPO_ROOT: Path = Path(__file__).resolve().parents[2]
 
-DATA_DIR: Path   = Path(os.getenv("DATA_DIR", REPO_ROOT / "data")).resolve()
-MODELS_DIR: Path = Path(os.getenv("MODEL_DIR",REPO_ROOT / "models")).resolve()
+DATA_DIR: Path = Path(os.getenv("DATA_DIR", REPO_ROOT / "data")).resolve()
+MODELS_DIR: Path = Path(os.getenv("MODELS_DIR", REPO_ROOT / "models")).resolve()
 
 PROCESSED_DIR: Path = Path(os.getenv("PROCESSED_DIR", DATA_DIR / "processed")).resolve()
-FEATURES_DIR:  Path = Path(os.getenv("FEATURES_DIR", DATA_DIR / "features")).resolve()
+FEATURES_DIR: Path = Path(os.getenv("FEATURES_DIR", DATA_DIR / "features")).resolve()
 
-PREPROCESSOR_PATH: Path = Path(os.getenv("PREPROCESSOR_PATH", MODELS_DIR / "preprocessor.pkl")).resolve()
-FEATURE_LIST_PATH: Path = Path(os.getenv("FEATURE_LIST_PATH", MODELS_DIR / "feature_list.json")).resolve()
-TARGET_MAP_PATH:   Path = Path(os.getenv("TARGET_MAP_PATH", MODELS_DIR / "target_map.json")).resolve()
+PREPROCESSOR_PATH: Path = MODELS_DIR / "preprocessor.pkl"
+FEATURE_LIST_PATH: Path = MODELS_DIR / "feature_list.json"
+TARGET_MAP_PATH: Path = Path(os.getenv("TARGET_MAP_PATH", MODELS_DIR / "target_map.json")).resolve()
 
-TAB_MODEL_PATH:    Path = Path(os.getenv("TAB_MODEL_PATH", MODELS_DIR / "tab_xgb.pkl")).resolve()
-FUSE_MODEL_PATH:   Path = Path(os.getenv("FUSE_MODEL_PATH", MODELS_DIR / "fuse.joblib")).resolve()
-SCALER_PATH:       Path = Path(os.getenv("SCALER_PATH", MODELS_DIR / "scaler.bin")).resolve()
+TAB_MODEL_PATH: Path = MODELS_DIR / "tab_xgb.pkl"
+FUSE_MODEL_PATH: Path = Path(os.getenv("FUSE_MODEL_PATH", MODELS_DIR / "fuse.joblib")).resolve()
+SCALER_PATH: Path = Path(os.getenv("SCALER_PATH", MODELS_DIR / "scaler.bin")).resolve()
 
-CNN_ONNX_PATH:     Path = Path(os.getenv("CNN_ONNX_PATH", MODELS_DIR / "cnn.onnx")).resolve()
-PARAMS_JSON_PATH:  Path = Path(os.getenv("PARAMS_JSON_PATH", MODELS_DIR / "params.json")).resolve()
+CNN_ONNX_PATH: Path = Path(os.getenv("CNN_ONNX_PATH", MODELS_DIR / "cnn.onnx")).resolve()
+PARAMS_JSON_PATH: Path = Path(os.getenv("PARAMS_JSON_PATH", MODELS_DIR / "params.json")).resolve()
 
 def assert_artifacts_available(required: Iterable[str] | None = None) -> None:
     names = list(required) if required is not None else [
@@ -74,4 +74,5 @@ __all__ = [
     "CNN_ONNX_PATH", "PARAMS_JSON_PATH",
     "assert_artifacts_available", "log_artifact_paths",
 ]
+
 
