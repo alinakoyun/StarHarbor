@@ -22,8 +22,8 @@ from api.utils.constants import (
 
 log = logging.getLogger(__name__)
 
-_PREPROC = None                      
-_FEATURES: List[str] = []            
+_PREPROCESSOR = None                      
+_FEATURES = []            
 _TARGET_MAP: Optional[List[str]] = None
 _TAB_MODEL = None                    
 _CNN_SESSION = None                  
@@ -248,3 +248,4 @@ def get_model_and_features():
 
 def align_features(df: pd.DataFrame) -> pd.DataFrame:
     return _align_feature_frame(df)
+
